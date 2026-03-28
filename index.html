@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com *.vercel-insights.com;">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>NotebookGen — Realistic Handwritten Assignment Generator for Students & Professors</title>
+    <meta name="description"
+        content="Generate ultra-realistic handwritten assignments with proper A4, A5, Letter page formats. Perfect for students and professors to create authentic-looking homework, lab reports, and more.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Dancing+Script:wght@400..700&family=Indie+Flower&family=Inter:wght@300;400;500;600;700&family=Kalam:wght@300;400;700&family=Permanent+Marker&family=Shadows+Into+Light&family=Patrick+Hand&family=Covered+By+Your+Grace&family=Reenie+Beanie&family=Homemade+Apple&family=Satisfy&family=Architects+Daughter&family=Tillana:wght@400;500;600;700&family=Yatra+One&display=swap"
+        rel="stylesheet">
+
+    <!-- Material Icons for toolbar -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- html2canvas for image export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- EXPERT: Favicon fix to remove the 404 in console -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZElEQVQ4T2NkoBAwUqifAWowOD/DDP//gYMBH6CPGf7//08pBvBhV0D644MPuALSkAEgHwyMD/Bhmv//E9K9v//xD5gC0pCBa7iC+v//Mv7/D7uC8/8J6V7sL9D9A90AdAUAAAY5Y42C5c+IAAAAAElFTkSuQmCC">
+
+    <!-- EXPERT: Advanced Global Error Shield to silence buggy external/extension scripts -->
+    <script>
+        (function() {
+            // Silence standard errors from dev tools or extensions
+            window.addEventListener('error', function(event) {
+                const targetFile = event.filename || (event.error && event.error.stack) || "";
+                if (targetFile.includes('frame_start') || targetFile.includes('refresh.js') || targetFile.includes('extension') || targetFile.includes('localhost')) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
+                }
+            }, true);
+
+            // Silence Unhandled Promise Rejections (often from extensions/dev tools)
+            window.addEventListener('unhandledrejection', function(event) {
+                const reason = (event.reason && event.reason.stack) ? event.reason.stack : (event.reason || "");
+                const reasonStr = typeof reason === 'string' ? reason : "";
+                if (reasonStr.includes('frame_start') || reasonStr.includes('refresh.js') || reasonStr.includes('localhost')) {
+                    event.preventDefault();
+                }
+            });
+
+            // EXPERT: Aggressively silence WebSocket connection noise from dev-servers (Live Server, etc.)
+            const NativeWebSocket = window.WebSocket;
+            window.WebSocket = function(url, protocols) {
+                const urlStr = String(url).toLowerCase();
+                // Target localhost, 127.0.0.1, and common dev-server ports/keywords
+                if (urlStr.includes('localhost') || urlStr.includes('127.0.0.1') || urlStr.includes('refresh') || urlStr.includes(':8081') || urlStr.includes(':5500')) {
+                    console.info("🛡️ Silenced dev-server WebSocket attempt to:", url);
+                    // Return a dummy object that mimics a WebSocket to prevent script crashes
+                    return {
+                        close: function(){},
+                        send: function(){},
+                        addEventListener: function(){},
+                        removeEventListener: function(){},
+                        onopen: null,
+                        onmessage: null,
+                        onerror: null,
+                        onclose: null,
+                        readyState: 3, // CLOSED
+                        binaryType: 'blob',
+                        bufferedAmount: 0,
+                        extensions: '',
+                        protocol: '',
+                        url: url
+                    };
+                }
+                try {
+                    return new NativeWebSocket(url, protocols);
+                } catch (e) {
+                    console.error("WebSocket creation failed:", e);
+                    throw e;
+                }
+            };
+            // Ensure the prototype is maintained for scripts checking 'instanceof WebSocket'
+            window.WebSocket.prototype = NativeWebSocket.prototype;
+        })();
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="controls-sidebar no-print" id="sidebar">
+            <header class="sidebar-header">
+                <div class="logo-area">
+                    <div class="logo-icon">
+                        <span class="material-icons-round">edit_note</span>
+                    </div>
+                    <div>
+                        <h1>Notebook<span class="highlight">Gen</span></h1>
+                        <p class="tagline">Ultra-realistic handwritten assignments</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <span class="pro-badge" id="pro-badge" title="Pro Features Active">PRO</span>
+                    <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse Sidebar">
+                        <span class="material-icons-round">chevron_left</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Auto-save indicator -->
+            <div class="autosave-badge" id="autosave-badge">
+                <span class="material-icons-round">cloud_done</span>
+                <span>Auto-saved</span>
+            </div>
+
+            <form id="generator-form" class="sidebar-form">
+
+                <!-- Section: Quick Templates -->
+                <div class="sidebar-section" data-section="templates">
+                    <button type="button" class="section-toggle">
+                        <span class="material-icons-round section-icon">auto_awesome</span>
+                        <span>Quick Templates</span>
+                        <span class="pro-feature-tag">PRO</span>
+                        <span class="material-icons-round chevron">expand_more</span>
+                    </button>
+                    <div class="section-content">
+                        <div class="template-grid" id="template-grid">
+                            <button type="button" class="template-card" data-template="homework">
+                                <span class="material-icons-round">assignment</span>
+                                <span>Homework</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="math-notes">
+                                <span class="material-icons-round">functions</span>
+                                <span>Math Expert</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="lab-report">
+                                <span class="material-icons-round">science</span>
+                                <span>Lab Report</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="essay">
+                                <span class="material-icons-round">history_edu</span>
+                                <span>Essay</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="journal">
+                                <span class="material-icons-round">auto_stories</span>
+                                <span>Daily Journal</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="comparison">
+                                <span class="material-icons-round">compare_arrows</span>
+                                <span>Comparison</span>
+                            </button>
+                            <button type="button" class="template-card" data-template="blank">
+                                <span class="material-icons-round">note_add</span>
+                                <span>Blank Page</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Section: Details -->
+                <div class="sidebar-section" data-section="details">
+                    <button type="button" class="section-toggle">
+                        <span class="material-icons-round section-icon">person</span>
+                        <span>Assignment Details</span>
+                        <span class="material-icons-round chevron">expand_more</span>
+                    </button>
+                    <div class="section-content open">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="student-name">Student Name</label>
+                                <input type="text" id="student-name" placeholder="E.g., John Doe" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="roll-number">Roll No / ID</label>
+                                <input type="text" id="roll-number" placeholder="E.g., 2024CS101" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="class-name">Class / Section</label>
+                                <input type="text" id="class-name" placeholder="E.g., CSE-A, Sec B" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="assignment-date"
+                                    style="display:flex; justify-content:space-between; align-items:center;">
+                                    Date
+                                    <button type="button" id="btn-today"
+                                        style="background:none; border:none; color:var(--accent-light); font-size:0.6rem; cursor:pointer; font-weight:700;">TODAY</button>
+                                </label>
+                                <input type="text" id="assignment-date" placeholder="E.g., March 4, 2026"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject-name">Subject</label>
+                            <input type="text" id="subject-name" placeholder="E.g., Data Structures & Algorithms"
+                                autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="professor-name">Professor / Instructor</label>
+                            <input type="text" id="professor-name" placeholder="E.g., Prof. Smith" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="assignment-title">Title / Heading</label>
+                            <input type="text" id="assignment-title" placeholder="E.g., Assignment 1: Linked Lists"
+                                autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Editor -->
+                <div class="sidebar-section" data-section="editor">
+                    <button type="button" class="section-toggle">
+                        <span class="material-icons-round section-icon">edit</span>
+                        <span>Content Editor</span>
+                        <span class="material-icons-round chevron">expand_more</span>
+                    </button>
+                    <div class="section-content open">
+                        <!-- WordPress-style Editor Toolbar -->
+                        <div class="editor-toolbar" id="editor-toolbar">
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)">
+                                    <span class="material-icons-round">undo</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)">
+                                    <span class="material-icons-round">redo</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="bold" title="Bold (Ctrl+B)">
+                                    <span class="material-icons-round">format_bold</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="italic" title="Italic (Ctrl+I)">
+                                    <span class="material-icons-round">format_italic</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="underline"
+                                    title="Underline (Ctrl+U)">
+                                    <span class="material-icons-round">format_underlined</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="strikeThrough"
+                                    title="Strikethrough">
+                                    <span class="material-icons-round">strikethrough_s</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="justifyLeft" title="Align Left">
+                                    <span class="material-icons-round">format_align_left</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="justifyCenter"
+                                    title="Align Center">
+                                    <span class="material-icons-round">format_align_center</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="justifyRight"
+                                    title="Align Right">
+                                    <span class="material-icons-round">format_align_right</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="insertUnorderedList"
+                                    title="Bullet List">
+                                    <span class="material-icons-round">format_list_bulleted</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="insertOrderedList"
+                                    title="Numbered List">
+                                    <span class="material-icons-round">format_list_numbered</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="indent" title="Indent">
+                                    <span class="material-icons-round">format_indent_increase</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="outdent" title="Outdent">
+                                    <span class="material-icons-round">format_indent_decrease</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <select class="toolbar-select" id="heading-select" title="Heading Style">
+                                    <option value="">Normal</option>
+                                    <option value="H1">Heading 1</option>
+                                    <option value="H2">Heading 2</option>
+                                    <option value="H3">Heading 3</option>
+                                </select>
+                            </div>
+                            <div class="toolbar-divider"></div>
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="insertHorizontalRule"
+                                    title="Horizontal Line">
+                                    <span class="material-icons-round">horizontal_rule</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="removeFormat"
+                                    title="Clear Formatting">
+                                    <span class="material-icons-round">format_clear</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" id="insert-image-btn" title="Insert Image">
+                                    <span class="material-icons-round">image</span>
+                                </button>
+                                 <button type="button" class="toolbar-btn" id="insert-table-btn" title="Insert Custom Table (Rows x Cols)">
+                                    <span class="material-icons-round">table_chart</span>
+                                </button>
+                                <div class="toolbar-group table-tools" id="table-tools-group" style="display: none;">
+                                    <div class="toolbar-divider"></div>
+                                    <div class="toolbar-group" title="Row Controls">
+                                        <button type="button" class="toolbar-btn" id="add-row-before-btn" title="Add Row Above">
+                                            <span class="material-icons-round">keyboard_double_arrow_up</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="add-row-btn" title="Add Row Below">
+                                            <span class="material-icons-round">keyboard_double_arrow_down</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="delete-row-btn" title="Delete Row">
+                                            <span class="material-icons-round">delete_sweep</span>
+                                        </button>
+                                    </div>
+                                    <div class="toolbar-divider"></div>
+                                    <div class="toolbar-group" title="Column Controls">
+                                        <button type="button" class="toolbar-btn" id="add-col-before-btn" title="Add Column Left">
+                                            <span class="material-icons-round">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="add-col-btn" title="Add Column Right">
+                                            <span class="material-icons-round">keyboard_double_arrow_right</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="delete-col-btn" title="Delete Column">
+                                            <span class="material-icons-round">view_column</span>
+                                        </button>
+                                    </div>
+                                    <div class="toolbar-divider"></div>
+                                    <div class="toolbar-group" title="Border Scope">
+                                        <select class="toolbar-select mini-select" id="border-scope-select" title="Target for border actions">
+                                            <option value="cell">Cell</option>
+                                            <option value="row">Row</option>
+                                            <option value="column">Col</option>
+                                            <option value="table">Table</option>
+                                        </select>
+                                    </div>
+                                    <div class="toolbar-group" title="Border Controls">
+                                        <button type="button" class="toolbar-btn" id="toggle-border-btn" title="Toggle All Borders">
+                                            <span class="material-icons-round">grid_on</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-outer-border-btn" title="Toggle Outer Frame">
+                                            <span class="material-icons-round">border_outer</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-inner-border-btn" title="Toggle All Inner Borders">
+                                            <span class="material-icons-round">border_inner</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-inner-v-btn" title="Toggle Inner Column Borders">
+                                            <span class="material-icons-round">border_vertical</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-inner-h-btn" title="Toggle Inner Row Borders">
+                                            <span class="material-icons-round">border_horizontal</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="clean-table-layout-btn" title="Clean Layout (Horizontal Only)">
+                                            <span class="material-icons-round">reorder</span>
+                                        </button>
+                                        <div class="toolbar-divider"></div>
+                                        <button type="button" class="toolbar-btn" id="balance-cols-btn" title="Balance Columns (Equal Width)">
+                                            <span class="material-icons-round">view_week</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="reset-table-btn" title="Reset Table Layout">
+                                            <span class="material-icons-round">restart_alt</span>
+                                        </button>
+                                        <div class="toolbar-divider"></div>
+                                        <button type="button" class="toolbar-btn" id="toggle-border-top-btn" title="Toggle Top Border">
+                                            <span class="material-icons-round">border_top</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-border-bottom-btn" title="Toggle Bottom Border">
+                                            <span class="material-icons-round">border_bottom</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-border-left-btn" title="Toggle Left Border">
+                                            <span class="material-icons-round">border_left</span>
+                                        </button>
+                                        <button type="button" class="toolbar-btn" id="toggle-border-right-btn" title="Toggle Right Border">
+                                            <span class="material-icons-round">border_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="toolbar-btn" id="draw-btn" title="Draw Diagram/Signature">
+                                    <span class="material-icons-round">draw</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" id="upload-txt-btn"
+                                    title="Import Text File (.txt/.md)">
+                                    <span class="material-icons-round">post_add</span>
+                                </button>
+                                <button type="button" class="toolbar-btn" id="dictate-btn" title="Voice Typing">
+                                    <span class="material-icons-round">mic</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Rich Text Editor (contenteditable) -->
+                        <div class="rich-editor" id="rich-editor" contenteditable="true" spellcheck="false"
+                            data-placeholder="Start typing your assignment content here... Use the toolbar above to format text.">
+                        </div>
+
+                        <!-- Word & Character count -->
+                        <div class="editor-stats">
+                            <span id="word-count">0 words</span>
+                            <span class="stats-divider">•</span>
+                            <span id="char-count">0 characters</span>
+                            <span class="stats-divider">•</span>
+                            <span id="page-count-stat">~1 page</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Page Setup (PRO) -->
+                <div class="sidebar-section" data-section="pagesetup">
+                    <button type="button" class="section-toggle">
+                        <span class="material-icons-round section-icon">description</span>
+                        <span>Page Setup</span>
+                        <span class="pro-feature-tag">PRO</span>
+                        <span class="material-icons-round chevron">expand_more</span>
+                    </button>
+                    <div class="section-content open">
+                        <div class="form-group">
+                            <label for="page-size">Page Size</label>
+                            <select id="page-size">
+                                <option value="A4" selected>A4 (210 × 297 mm)</option>
+                                <option value="A3">A3 (297 × 420 mm)</option>
+                                <option value="A5">A5 (148 × 210 mm)</option>
+                                <option value="Letter">US Letter (8.5 × 11 in)</option>
+                                <option value="Legal">US Legal (8.5 × 14 in)</option>
+                                <option value="B5">B5 (176 × 250 mm)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="page-orientation">Orientation</label>
+                            <div class="orientation-buttons">
+                                <button type="button" class="orient-btn active" data-orient="portrait" title="Portrait">
+                                    <span class="material-icons-round">crop_portrait</span>
+                                    <span>Portrait</span>
+                                </button>
+                                <button type="button" class="orient-btn" data-orient="landscape" title="Landscape">
+                                    <span class="material-icons-round">crop_landscape</span>
+                                    <span>Landscape</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group margin-scope-group">
+                            <label for="margin-scope">Margin Scope</label>
+                            <div class="select-with-btns" style="display: flex; gap: 8px;">
+                <div class="field-label-row">
+                    <label class="field-label" title="Set margins for all pages or choose a specific page for unique layouts.">
+                        <span class="material-icons-round expert-icon">layers</span> MARGIN SCOPE
+                    </label>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <select id="margin-scope" style="flex:1;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:12px;cursor:pointer;">
+                            <option value="all">Apply to All Pages</option>
+                            <option value="current">Specific Page Only</option>
+                        </select>
+                        <select id="target-page-select" style="display:none;width:105px;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:12px;cursor:pointer;">
+                            <option value="1">Page 1</option>
+                        </select>
+                    </div>
+                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Margins (mm)</label>
+                            <div class="margin-controls">
+                                <div class="margin-input">
+                                    <span>T</span>
+                                    <input type="number" id="margin-top" value="35" min="10" max="80" step="5">
+                                </div>
+                                <div class="margin-input">
+                                    <span>R</span>
+                                    <input type="number" id="margin-right" value="20" min="10" max="80" step="5">
+                                </div>
+                                <div class="margin-input">
+                                    <span>B</span>
+                                    <input type="number" id="margin-bottom" value="20" min="10" max="80" step="5">
+                                </div>
+                                <div class="margin-input">
+                                    <span>L</span>
+                                    <input type="number" id="margin-left" value="30" min="10" max="80" step="5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row-group">
+                            <div class="form-sub-group">
+                                <label class="checkbox-label small-label">
+                                    <input type="checkbox" id="show-page-numbers" checked>
+                                    <span class="checkmark"></span>
+                                    <span>Page Numbers</span>
+                                </label>
+                            </div>
+                            <div class="form-sub-group">
+                                <select id="page-number-pos" class="mini-select">
+                                    <option value="center" selected>Center</option>
+                                    <option value="right">Right</option>
+                                    <option value="left">Left</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-header-every-page">
+                                <span class="checkmark"></span>
+                                <span style="font-size: 0.85em;">Repeat header on every page</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Customization -->
+                <div class="sidebar-section" data-section="customization">
+                    <button type="button" class="section-toggle">
+                        <span class="material-icons-round section-icon">palette</span>
+                        <span>Handwriting Style</span>
+                        <span class="material-icons-round chevron">expand_more</span>
+                    </button>
+                    <div class="section-content open">
+                        <div class="form-group">
+                            <label for="font-family">Font Style</label>
+                            <select id="font-family">
+                                <optgroup label="English Fonts">
+                                    <option value="'Kalam', cursive" selected>Kalam (Natural)</option>
+                                    <option value="'Caveat', cursive">Caveat (Smooth)</option>
+                                    <option value="'Indie Flower', cursive">Indie Flower (Playful)</option>
+                                    <option value="'Shadows Into Light', cursive">Shadows Into Light (Airy)</option>
+                                    <option value="'Dancing Script', cursive">Dancing Script (Elegant)</option>
+                                    <option value="'Permanent Marker', cursive">Permanent Marker (Bold)</option>
+                                    <option value="'Patrick Hand', cursive">Patrick Hand (Casual)</option>
+                                    <option value="'Covered By Your Grace', cursive">Covered By Your Grace</option>
+                                    <option value="'Reenie Beanie', cursive">Reenie Beanie (Scribbly)</option>
+                                    <option value="'Homemade Apple', cursive">Homemade Apple (Artsy)</option>
+                                    <option value="'Satisfy', cursive">Satisfy (Flowing)</option>
+                                    <option value="'Architects Daughter', cursive">Architects Daughter (Technical)
+                                    </option>
+                                </optgroup>
+                                <optgroup label="Hindi / Devanagari">
+                                    <option value="'Tillana', cursive">Tillana (Hindi Hand)</option>
+                                    <option value="'Yatra One', cursive">Yatra One (Hindi Brush)</option>
+                                </optgroup>
+                            </select>
+                            <button type="button" id="custom-font-btn" class="secondary-btn" style="margin-top: 8px;">
+                                <span class="material-icons-round">upload_file</span>
+                                Upload Custom Font (.ttf/.otf)
+                            </button>
+                            <input type="file" id="custom-font-input" accept=".ttf,.otf,.woff,.woff2"
+                                style="display:none;">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="font-size">Font Size</label>
+                            <input type="range" id="font-size" min="14" max="40" value="22" step="1">
+                            <span id="font-size-val">22px</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ink Color</label>
+                            <div class="color-options" id="ink-color-options">
+                                <button type="button" class="color-btn active" data-color="#191970"
+                                    style="background-color: #191970;" title="Blue Black"></button>
+                                <button type="button" class="color-btn" data-color="#0000CD"
+                                    style="background-color: #0000CD;" title="Royal Blue"></button>
+                                <button type="button" class="color-btn" data-color="#111111"
+                                    style="background-color: #111111;" title="Black"></button>
+                                <button type="button" class="color-btn" data-color="#DC143C"
+                                    style="background-color: #DC143C;" title="Red"></button>
+                                <button type="button" class="color-btn" data-color="#006400"
+                                    style="background-color: #006400;" title="Green"></button>
+                                <button type="button" class="color-btn" data-color="#4B0082"
+                                    style="background-color: #4B0082;" title="Indigo"></button>
+                                <button type="button" class="color-btn" data-color="#8B4513"
+                                    style="background-color: #8B4513;" title="Brown"></button>
+                                <button type="button" class="color-btn color-btn-custom" data-color="custom"
+                                    title="Custom Color Pick">
+                                    <span class="material-icons-round" style="font-size:14px;color:#999">colorize</span>
+                                </button>
+                                <input type="color" id="custom-ink-color" class="hidden-color-picker" value="#191970">
+                                <div class="hex-input-wrapper">
+                                    <span>#</span>
+                                    <input type="text" id="custom-ink-hex" placeholder="191970" maxlength="6">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Expert Formatting</label>
+                            <div class="expert-controls">
+                                <div class="expert-item" title="Ruled Line Color">
+                                    <span class="expert-label">Lines</span>
+                                    <input type="color" id="ruled-line-color-picker" value="#c2ddf0">
+                                </div>
+                                <div class="expert-item" title="Margin Line Color">
+                                    <span class="expert-label">Margin</span>
+                                    <input type="color" id="margin-line-color-picker" value="#ef9090">
+                                </div>
+                                <div class="expert-item" title="Paper Background Color">
+                                    <span class="expert-label">Paper</span>
+                                    <input type="color" id="paper-color-picker" value="#fefdfb">
+                                </div>
+                            </div>
+                            <div class="expert-row-controls" style="margin-top: 10px;">
+                                <div class="expert-item">
+                                    <span class="expert-label">Opacity</span>
+                                    <input type="range" id="line-opacity-slider" min="0" max="100" value="70" class="mini-range">
+                                </div>
+                                <div class="expert-item">
+                                    <span class="expert-label">Nudge (Offset)</span>
+                                    <input type="number" id="line-nudge-input" value="0" step="1" class="mini-number">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="paper-style">Paper Style</label>
+                            <select id="paper-style">
+                                <option value="ruled">Ruled Notebook</option>
+                                <option value="blank">Blank Page (No Lines)</option>
+                                <option value="math">Math Grid (Graph)</option>
+                                <option value="dotted">Dotted Grid</option>
+                                <option value="custom">Custom Upload</option>
+                            </select>
+                            <button type="button" id="custom-paper-btn" class="secondary-btn"
+                                style="margin-top: 8px; display: none;">
+                                <span class="material-icons-round">upload_file</span>
+                                Upload Paper BG Image
+                            </button>
+                            <input type="file" id="custom-paper-input" accept="image/*" style="display:none;">
+                        </div>
+
+                        <!-- Realism Controls -->
+                        <div class="form-group">
+                            <label for="realism-level">Handwriting Realism</label>
+                            <input type="range" id="realism-level" min="0" max="100" value="60" step="5">
+                            <div class="range-labels">
+                                <span>Clean</span>
+                                <span>Natural</span>
+                                <span>Messy</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ink-variation">Ink Pressure Variation</label>
+                            <input type="range" id="ink-variation" min="0" max="100" value="40" step="5">
+                            <div class="range-labels">
+                                <span>Uniform</span>
+                                <span>Slight</span>
+                                <span>Heavy</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="line-spacing">Line Spacing</label>
+                            <input type="range" id="line-spacing" min="28" max="60" value="38" step="1">
+                            <span id="line-spacing-val">38px</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="letter-spacing-range">Letter Spacing</label>
+                            <input type="range" id="letter-spacing-range" min="-1" max="4" value="0" step="0.5">
+                            <span id="letter-spacing-val">0px</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="word-spacing-range">Word Spacing</label>
+                            <input type="range" id="word-spacing-range" min="-5" max="20" value="0" step="1">
+                            <span id="word-spacing-val">0px</span>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-smudges">
+                                <span class="checkmark"></span>
+                                <span>Add ink smudges (realistic)</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-paper-texture" checked>
+                                <span class="checkmark"></span>
+                                <span>Paper texture & aging</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-paper-stain">
+                                <span class="checkmark"></span>
+                                <span>Coffee stain effect</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-margin-doodle">
+                                <span class="checkmark"></span>
+                                <span>Margin doodles</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group" style="margin-top: 8px;">
+                            <label class="checkbox-label"
+                                title="Applies a high-contrast vintage filter to look like a scanned document">
+                                <input type="checkbox" id="enable-scanner-fx">
+                                <span class="checkmark"></span>
+                                <span><span class="pro-feature-tag" style="margin: 0 4px 0 0;">PRO</span><b>CamScanner
+                                        Effect</b></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group" style="margin-top: 8px;">
+                            <label class="checkbox-label"
+                                title="Applies a weathered, aged look to the paper with yellowing and noise">
+                                <input type="checkbox" id="enable-vintage-paper">
+                                <span class="checkmark"></span>
+                                <span><span class="pro-feature-tag" style="margin: 0 4px 0 0;">PRO</span><b>Vintage Paper Aging</b></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions">
+                    <button type="button" id="print-btn" class="primary-btn">
+                        <span class="material-icons-round">print</span>
+                        Print / Save as PDF
+                    </button>
+                    <div class="action-row">
+                        <button type="button" id="download-img-btn" class="secondary-btn">
+                            <span class="material-icons-round">download</span>
+                            Save as Image
+                        </button>
+                        <button type="button" id="copy-btn" class="secondary-btn">
+                            <span class="material-icons-round">content_copy</span>
+                            Copy
+                        </button>
+                    </div>
+                    <div class="action-row">
+                        <button type="button" id="fullscreen-btn" class="secondary-btn">
+                            <span class="material-icons-round">fullscreen</span>
+                            Fullscreen
+                        </button>
+                        <button type="button" id="clear-btn" class="secondary-btn danger-btn">
+                            <span class="material-icons-round">delete_sweep</span>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </aside>
+
+        <!-- Main Preview Area -->
+        <main class="preview-area" id="preview-area">
+            <!-- Top bar for preview controls -->
+            <div class="preview-topbar no-print">
+                <button type="button" id="sidebar-open-btn" class="icon-btn sidebar-open-btn" title="Open Sidebar"
+                    style="display:none;">
+                    <span class="material-icons-round">menu</span>
+                </button>
+                <div class="zoom-controls">
+                    <button type="button" id="zoom-out" class="icon-btn" title="Zoom Out">
+                        <span class="material-icons-round">remove</span>
+                    </button>
+                    <span id="zoom-level">100%</span>
+                    <button type="button" id="zoom-in" class="icon-btn" title="Zoom In">
+                        <span class="material-icons-round">add</span>
+                    </button>
+                    <button type="button" id="zoom-fit" class="icon-btn" title="Fit to Screen">
+                        <span class="material-icons-round">fit_screen</span>
+                    </button>
+                </div>
+                <div class="topbar-info">
+                    <div class="page-size-indicator" id="page-size-indicator">A4 · Portrait</div>
+                    <div class="page-info" id="page-info">Page 1 of 1</div>
+                </div>
+            </div>
+
+            <div class="paper-scroll-container" id="paper-scroll-container">
+                <div class="paper-wrapper" id="paper-wrapper">
+                    <!-- Pages will be dynamically generated here -->
+                    <div id="pages-container"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Action Bar (visible only on mobile) -->
+        <div class="mobile-action-bar no-print" id="mobile-action-bar">
+            <button type="button" id="mobile-print-btn" class="mobile-action-btn" title="Print / Save as PDF">
+                <span class="material-icons-round">print</span>
+                <span>PDF</span>
+            </button>
+            <button type="button" id="mobile-download-btn" class="mobile-action-btn" title="Save as Image">
+                <span class="material-icons-round">download</span>
+                <span>Image</span>
+            </button>
+            <button type="button" id="mobile-fullscreen-btn" class="mobile-action-btn" title="Fullscreen">
+                <span class="material-icons-round">fullscreen</span>
+                <span>Full</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden file input for image insertion -->
+    <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+
+    <!-- Hidden file input for TXT integration -->
+    <input type="file" id="txt-file-input" accept=".txt,.md,.rtf" style="display:none;">
+
+    <!-- Toast notification -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Drawing Modal -->
+    <div class="modal" id="draw-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Draw Signature / Diagram</h3>
+                <button type="button" class="icon-btn" id="close-draw-modal">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="draw-tools">
+                    <button type="button" class="toolbar-btn active" id="draw-pen">
+                        <span class="material-icons-round">edit</span>
+                    </button>
+                    <button type="button" class="toolbar-btn" id="draw-eraser">
+                        <span class="material-icons-round">ink_eraser</span>
+                    </button>
+                    <input type="color" id="draw-color" value="#191970" class="toolbar-btn"
+                        style="padding:0;width:32px;height:32px;border:none;cursor:pointer;">
+                    <div style="display:flex; flex-direction:column; width:80px; margin-left:10px;">
+                        <label for="draw-size" style="font-size:0.65rem; color:var(--sidebar-text-muted);">Brush
+                            Size</label>
+                        <input type="range" id="draw-size" min="1" max="10" value="2" style="width:100%;">
+                    </div>
+                    <button type="button" class="secondary-btn" id="draw-clear" style="margin-left:auto;">
+                        <span class="material-icons-round" style="font-size:16px;">delete</span> Clear
+                    </button>
+                </div>
+                <!-- Fixed canvas size, visual scaled with CSS if needed -->
+                <canvas id="draw-canvas" width="500" height="250"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="secondary-btn" id="cancel-draw">Cancel</button>
+                <button type="button" class="primary-btn" id="insert-draw">Insert Drawing</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Insertion Modal -->
+    <div class="modal" id="table-modal">
+        <div class="modal-content" style="max-width: 350px;">
+            <div class="modal-header">
+                <h3>Insert Table</h3>
+                <button type="button" class="icon-btn" id="close-table-modal">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-grid-chooser" id="table-grid-chooser">
+                    <!-- Grid will be generated by JS -->
+                </div>
+                <div class="table-size-inputs">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Rows</label>
+                            <div class="input-with-btns">
+                                <button type="button" class="small-btn" onclick="document.getElementById('table-rows-input').stepDown()">-</button>
+                                <input type="number" id="table-rows-input" value="3" min="1" max="20">
+                                <button type="button" class="small-btn" onclick="document.getElementById('table-rows-input').stepUp()">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cols</label>
+                            <div class="input-with-btns">
+                                <button type="button" class="small-btn" onclick="document.getElementById('table-cols-input').stepDown()">-</button>
+                                <input type="number" id="table-cols-input" value="3" min="1" max="10">
+                                <button type="button" class="small-btn" onclick="document.getElementById('table-cols-input').stepUp()">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="secondary-btn" id="cancel-table">Cancel</button>
+                <button type="button" class="primary-btn" id="confirm-table">Insert Table</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+
+    <!-- EXPERT: Authentic Hand-Drawn Physics Filter (Hidden) -->
+    <svg style="position: absolute; width: 0; height: 0;" xmlns="http://www.w3.org/2000/svg">
+        <filter id="hand-drawn-filter" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="1" result="noise" seed="1" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.7" />
+        </filter>
+    </svg>
+</body>
+
+</html>
